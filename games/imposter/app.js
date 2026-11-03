@@ -15,7 +15,7 @@
   var PREFIX = 'isaif-imposter-';
   var GRACE_MS = 20000;
   var CONNECT_TIMEOUT_MS = 15000;
-  var MAX_RETRIES = 6;
+  var MAX_RETRIES = 20;
 
   var state = { screen: 'home', view: null, busy: '', reconnecting: false, picked: null, name: '', code: '', fromLink: false, closedMsg: '' };
   var net = freshNet();
@@ -24,7 +24,8 @@
   function freshNet() {
     return {
       role: null, peer: null, conn: null, conns: {}, timers: {}, room: null, code: '', myId: '',
-      name: '', token: '', joined: false, ready: false, leaving: false, retries: 0, connectTimer: null
+      name: '', token: '', joined: false, ready: false, leaving: false, retries: 0, connectTimer: null,
+      signalled: false, hostTimer: null
     };
   }
 
@@ -140,7 +141,9 @@
   }
 
   function busyHtml() {
-    return '<section class="screen screen--center"><p class="busy">' + esc(state.busy) + '</p></section>';
+    return '<section class="screen screen--center"><p class="busy">' + esc(state.busy) + '</p>' +
+      (net.role === 'client' ? '<button class="btn btn--ghost btn--block" data-action="leave">إلغاء</button>' : '') +
+      '</section>';
   }
 
   function closedHtml() {
@@ -418,6 +421,11 @@
     }, CONNECT_TIMEOUT_MS);
 
     peer.on('open', function () {
+      if (opened) {
+        /* رجع اتصال المضيف بخادم الإشارة بعد انقطاع: الغرفة كما هي ولا تُعاد من الصفر */
+        if (net.peer === peer) { state.reconnecting = false; render(); }
+        return;
+      }
       opened = true;
       clearTimeout(timer);
       net = freshNet();
@@ -430,7 +438,15 @@
       net.room = L.createRoom(code, net.token, name);
       net.myId = net.room.hostId;
       peer.on('connection', onIncoming);
-      peer.on('disconnected', function () { try { peer.reconnect(); } catch (e) { /* ignore */ } });
+      peer.on('disconnected', function () {
+        if (net.peer !== peer) return;
+        state.reconnecting = true;
+        render();
+        hostReconnect(peer);
+      });
+      peer.on('close', function () {
+        if (net.peer === peer && !net.leaving) showClosed('انقطع اتصال المضيف بخادم الألعاب. أنشئ غرفة جديدة.');
+      });
       state.busy = '';
       state.screen = 'game';
       keepAwake(true);
@@ -443,6 +459,15 @@
       if (err && err.type === 'unavailable-id' && attempt < 6) return createHost(name, attempt + 1);
       fail('تعذّر إنشاء الغرفة. تأكد من الإنترنت وحاول مرة ثانية.');
     });
+  }
+
+  /* الجوال يقطع اتصال المضيف بخادم الإشارة لما يطلع من الصفحة (مثلاً ليرسل الرابط في الواتساب)،
+     فنعيد الاتصال كل 3 ثواني، وعند الرجوع للصفحة مباشرة. */
+  function hostReconnect(peer) {
+    clearTimeout(net.hostTimer);
+    if (net.peer !== peer || peer.destroyed || !peer.disconnected) return;
+    try { peer.reconnect(); } catch (e) { /* ignore */ }
+    net.hostTimer = setTimeout(function () { hostReconnect(peer); }, 3000);
   }
 
   function onIncoming(conn) {
@@ -543,14 +568,19 @@
     clearTimeout(net.connectTimer);
     net.ready = false;
     var peer;
-    try { peer = new window.Peer(); } catch (e) { return retryOrFail('تعذّر الاتصال. حاول مرة ثانية.'); }
+    net.signalled = false;
+    try { peer = new window.Peer(); } catch (e) { return retryOrFail('تعذّر الاتصال. حاول مرة ثانية. [init]'); }
     net.peer = peer;
     net.connectTimer = setTimeout(function () {
-      if (net.peer === peer && !net.ready) retryOrFail('تعذّر الاتصال بالغرفة. تأكد من الإنترنت وحاول مرة ثانية.');
+      if (net.peer !== peer || net.ready) return;
+      retryOrFail(net.signalled
+        ? 'وصلنا للخادم لكن ما قدرنا نربط جوالك بجوال المضيف. غالباً بسبب نوع الشبكة، جرّبوا نفس الواي فاي. [ice-timeout]'
+        : 'تعذّر الوصول لخادم الاتصال. تأكد من الإنترنت وحاول مرة ثانية. [server-timeout]');
     }, CONNECT_TIMEOUT_MS);
 
     peer.on('open', function () {
       if (net.peer !== peer) return;
+      net.signalled = true;
       var conn = peer.connect(PREFIX + net.code, { reliable: true, serialization: 'json' });
       net.conn = conn;
       conn.on('open', function () { conn.send({ t: 'join', token: net.token, name: net.name }); });
@@ -560,10 +590,11 @@
     });
     peer.on('error', function (err) {
       if (net.peer !== peer) return;
-      if (err && err.type === 'peer-unavailable') {
-        retryOrFail('ما لقينا غرفة بهذا الرمز. تأكد منه وحاول مرة ثانية.');
+      var kind = (err && err.type) || 'unknown';
+      if (kind === 'peer-unavailable') {
+        retryOrFail('ما لقينا غرفة بهذا الرمز. تأكد منه، وإذا المضيف طلع من الصفحة خلّه يرجع لها. [peer-unavailable]');
       } else {
-        retryOrFail('تعذّر الاتصال. تأكد من الإنترنت وحاول مرة ثانية.');
+        retryOrFail('تعذّر الاتصال. تأكد من الإنترنت وحاول مرة ثانية. [' + kind + ']');
       }
     });
   }
@@ -606,7 +637,7 @@
   function onClientClosed() {
     clearTimeout(net.connectTimer);
     if (net.leaving) return;
-    if (!net.joined) { fail('انقطع الاتصال. حاول مرة ثانية.'); return; }
+    if (!net.joined) { fail('انقطع الاتصال. حاول مرة ثانية. [closed-early]'); return; }
     state.reconnecting = true;
     render();
     scheduleRetry();
@@ -615,6 +646,11 @@
   function onVisible() {
     if (document.visibilityState !== 'visible') return;
     if (state.screen === 'game') keepAwake(true);
+    if (net.role === 'host' && net.peer && net.peer.disconnected) {
+      state.reconnecting = true;
+      render();
+      hostReconnect(net.peer);
+    }
     if (net.role === 'client' && net.joined && !net.leaving && !state.reconnecting && net.conn && net.conn.open === false) {
       onClientClosed();
     }
@@ -729,6 +765,13 @@
     if (m) { state.code = m[1]; state.fromLink = true; }
 
     var saved = sget('imp_session');
+    if (saved && m) {
+      /* رابط غرفة جديد يتقدم على أي جلسة قديمة محفوظة في نفس التبويب */
+      try {
+        var old = JSON.parse(saved);
+        if (!old || old.code !== m[1]) { sdel('imp_session'); saved = null; }
+      } catch (e) { sdel('imp_session'); saved = null; }
+    }
     if (saved && ensurePeerQuiet()) {
       try {
         var s = JSON.parse(saved);
