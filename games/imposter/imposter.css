@@ -1,0 +1,180 @@
+/* لعبة الإمبوستر: الإشارة البصرية هي كتل سوداء بخط ذهبي كبير */
+
+.screen { display: grid; gap: 22px; align-content: start; }
+.screen--center { min-height: 60dvh; align-content: center; }
+
+.busy { font-size: 1.6rem; font-weight: 800; text-align: center; }
+
+.or { text-align: center; color: var(--muted); }
+
+.how { border-top: 1.5px solid var(--line); padding-top: 16px; }
+.how summary { cursor: pointer; font-weight: 700; }
+.how ol { margin-top: 14px; padding-inline-start: 1.4em; display: grid; gap: 8px; color: var(--muted); }
+
+.notice {
+  padding: 12px 16px;
+  border-radius: var(--r-md);
+  background: #fff;
+  border: 1.5px solid var(--gold);
+  font-weight: 500;
+}
+
+/* ---------- رمز الغرفة ---------- */
+
+.code {
+  font-size: clamp(4.2rem, 26vw, 7.5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .06em;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  padding: 22px 0 18px;
+  background: var(--ink);
+  color: var(--gold);
+  border-radius: var(--r-lg);
+  direction: ltr;
+}
+
+.row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row-actions--one { grid-template-columns: 1fr; }
+
+.count { color: var(--gold-deep); }
+
+/* ---------- قائمة اللاعبين ---------- */
+
+.roster { list-style: none; padding: 0; display: grid; gap: 10px; }
+.player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: #fff;
+  border: 1.5px solid var(--line);
+}
+.player-name { font-weight: 700; font-size: 1.15rem; margin-inline-end: auto; overflow-wrap: anywhere; }
+.player.is-off { opacity: .55; }
+
+.wait { color: var(--muted); text-align: center; }
+
+/* ---------- بطاقة الدور ---------- */
+
+.role-card {
+  position: relative;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  min-height: min(56dvh, 420px);
+  padding: 28px 20px;
+  border-radius: var(--r-lg);
+  background: var(--ink);
+  color: var(--gold);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+.role-card:focus-visible { outline-color: var(--gold); outline-offset: 4px; }
+.role-hint { font-size: 1.3rem; font-weight: 500; line-height: 1.6; }
+
+.face { display: none; gap: 12px; justify-items: center; }
+.face-main {
+  font-size: clamp(3.2rem, 17vw, 5.6rem);
+  font-weight: 900;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.face-note { font-size: 1.05rem; font-weight: 500; max-width: 24ch; }
+
+.role-card.is-revealed .role-hint { display: none; }
+.role-card.is-revealed .face { display: grid; animation: pop .18s ease-out; }
+.role-card--imposter.is-revealed { background: var(--gold); color: var(--ink); }
+
+@keyframes pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+
+.turn { font-size: 1.3rem; text-align: center; }
+.turn b { font-weight: 900; }
+
+/* ---------- التصويت ---------- */
+
+.ballot { list-style: none; padding: 0; display: grid; gap: 10px; }
+.ballot-item {
+  width: 100%;
+  min-height: 60px;
+  padding: 0 20px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  font-weight: 800;
+  font-size: 1.3rem;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color .12s ease, color .12s ease;
+}
+.ballot-item.is-picked { background: var(--ink); color: var(--gold); }
+
+.done { font-size: 1.4rem; font-weight: 800; }
+
+.chips { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- النتيجة ---------- */
+
+.block { border-radius: var(--r-lg); padding: 26px 22px; display: grid; gap: 4px; }
+.block--gold { background: var(--gold); color: var(--ink); }
+.block--ink { background: var(--ink); color: var(--gold); }
+.block-main {
+  font-size: clamp(2.6rem, 14vw, 4.4rem);
+  font-weight: 900;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.block-note { font-size: 1.05rem; font-weight: 500; }
+
+.tally { list-style: none; padding: 0; display: grid; gap: 14px; }
+.tally-row { display: grid; grid-template-columns: minmax(0, 1fr) 2.2em; gap: 6px 12px; align-items: center; }
+.tally-name { grid-column: 1; grid-row: 1; font-weight: 700; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.tally-n { grid-column: 2; grid-row: 1; font-weight: 800; text-align: end; font-variant-numeric: tabular-nums; }
+.tally-bar { grid-column: 1 / -1; grid-row: 2; height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.tally-bar i { display: block; height: 100%; background: var(--ink); border-radius: inherit; }
+.tally-row.is-imposter .tally-bar i { background: var(--alert); }
+
+.who { list-style: none; padding: 0; display: grid; gap: 4px; color: var(--muted); font-size: 1rem; }
+
+/* لحظة الكشف: تظهر عناصر النتيجة بالتتابع مرة واحدة فقط */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.is-staged .step { animation: rise .5s cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--d, 0s); }
+
+/* ---------- تنبيهات ---------- */
+
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: -24px -20px 16px;
+  padding: 10px 20px;
+  background: var(--alert);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+.toast {
+  position: fixed;
+  inset-inline: 16px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  max-width: 520px;
+  margin-inline: auto;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 10;
+}
+.toast.show { opacity: 1; transform: none; }

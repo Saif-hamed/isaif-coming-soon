@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>الإمبوستر | isaif.om</title>
+<meta name="description" content="لعبة جماعية بالعربي: كلكم تعرفون الكلمة إلا واحد. من 3 لاعبين فأكثر، كل لاعب على جواله.">
+<meta name="theme-color" content="#F7F4EF">
+<meta property="og:type" content="website">
+<meta property="og:title" content="الإمبوستر">
+<meta property="og:description" content="كلكم تعرفون الكلمة إلا واحد. اسألوا بعض وكشفوه بالتصويت.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231A1814'/%3E%3Ccircle cx='32' cy='32' r='12' fill='%23C9A84C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/style.css">
+<link rel="stylesheet" href="imposter.css">
+</head>
+<body>
+<main class="wrap" id="app">
+  <noscript><p class="lede">هذه اللعبة تحتاج تفعيل جافاسكربت في المتصفح.</p></noscript>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- مكتبة الاتصال بين اللاعبين (WebRTC). مثبّتة على نسخة محددة. -->
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="words.js"></script>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
